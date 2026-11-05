@@ -1,0 +1,8 @@
+{
+  "name": "TrustVault",
+  "description": "Secure document sharing platform with centralized zero-trust authorization, cryptographic SHA-256 audit hash chain, immediate revocation, and threat verification.",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}
