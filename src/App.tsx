@@ -34,6 +34,7 @@ import { AdminUsersView } from './components/AdminUsersView';
 import { ThemeSettingsView } from './components/ThemeSettingsView';
 import { RecordHistoryView } from './components/RecordHistoryView';
 import { JudgeDemoModal } from './components/JudgeDemoModal';
+import { AuthPage } from './components/AuthPage';
 import { ShieldAlert } from 'lucide-react';
 import { useTheme } from './context/ThemeContext';
 
@@ -61,6 +62,11 @@ export default function App() {
   const [isUploadOpen, setIsUploadOpen] = useState(false);
   const [isDemoGuideOpen, setIsDemoGuideOpen] = useState(false);
   const [accessDeniedAlert, setAccessDeniedAlert] = useState<{ title: string; reason: string } | null>(null);
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(() => {
+    const saved = localStorage.getItem('trustvault_authenticated');
+    return saved !== null ? saved === 'true' : true;
+  });
+  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
 
   // Initialize DB and Audit Chain on mount
   useEffect(() => {
@@ -110,6 +116,73 @@ export default function App() {
         reason: `User authenticated via WebAuthn session. Switched persona to ${user.fullName} (${user.role}).`
       }
     );
+    await refreshAuditState();
+  };
+
+  const handleLoginSuccess = async (user: User, method: string) => {
+    setCurrentUser(user);
+    setIsAuthenticated(true);
+    setIsAuthModalOpen(false);
+    localStorage.setItem('trustvault_authenticated', 'true');
+    localStorage.setItem('trustvault_current_user_id', user.id);
+
+    await AuditService.recordEvent(
+      { id: user.id, email: user.email, role: user.role },
+      'LOGIN',
+      {
+        decision: 'ALLOW',
+        reason: `User '${user.fullName}' completed Two-Step Verification (2FA). Session initiated via ${method}.`,
+        metadata: { authMethod: method, role: user.role }
+      }
+    );
+    await refreshAuditState();
+  };
+
+  const handleRegisterSuccess = async (newUser: User) => {
+    const updatedUsers = [...allUsers, newUser];
+    setAllUsers(updatedUsers);
+    localStorage.setItem('trustvault_users', JSON.stringify(updatedUsers));
+    setCurrentUser(newUser);
+    setIsAuthenticated(true);
+    setIsAuthModalOpen(false);
+    localStorage.setItem('trustvault_authenticated', 'true');
+    localStorage.setItem('trustvault_current_user_id', newUser.id);
+
+    await AuditService.recordEvent(
+      { id: newUser.id, email: newUser.email, role: newUser.role },
+      'USER_REGISTRATION',
+      {
+        decision: 'ALLOW',
+        reason: `New enterprise account registered with role '${newUser.role}' and Two-Step Verification (2FA) activated.`,
+        metadata: { newUserId: newUser.id, role: newUser.role }
+      }
+    );
+
+    await AuditService.recordEvent(
+      { id: newUser.id, email: newUser.email, role: newUser.role },
+      'LOGIN',
+      {
+        decision: 'ALLOW',
+        reason: `Initial session authenticated for new user '${newUser.fullName}' (${newUser.role}) via Two-Step Verification.`,
+        metadata: { role: newUser.role }
+      }
+    );
+
+    await refreshAuditState();
+  };
+
+  const handleSignOut = async () => {
+    await AuditService.recordEvent(
+      { id: currentUser.id, email: currentUser.email, role: currentUser.role },
+      'LOGOUT',
+      {
+        decision: 'ALLOW',
+        reason: `User '${currentUser.fullName}' signed out securely. Session destroyed.`,
+        metadata: { userId: currentUser.id }
+      }
+    );
+    setIsAuthenticated(false);
+    localStorage.setItem('trustvault_authenticated', 'false');
     await refreshAuditState();
   };
 
@@ -539,6 +612,17 @@ export default function App() {
     );
   }
 
+  // Mandatory Authentication & Two-Step Verification View
+  if (!isAuthenticated) {
+    return (
+      <AuthPage
+        allUsers={allUsers}
+        onLoginSuccess={handleLoginSuccess}
+        onRegisterSuccess={handleRegisterSuccess}
+      />
+    );
+  }
+
   return (
     <div className="min-h-screen flex flex-col font-sans transition-colors duration-200 bg-[#081426] text-[#F8FAFC]">
       {/* Header */}
@@ -551,6 +635,8 @@ export default function App() {
         notifications={notifications}
         onOpenDemoGuide={() => setIsDemoGuideOpen(true)}
         chainValid={auditResult.valid}
+        onSignOut={handleSignOut}
+        onOpenAuth={() => setIsAuthModalOpen(true)}
       />
 
       {/* Main Content Area */}
@@ -681,7 +767,7 @@ export default function App() {
               onClick={() => setIsDemoGuideOpen(true)}
               className="transition-colors hover:text-cyan-300 font-semibold"
             >
-              Enterprise Platform Tour
+              Interactive Demo
             </button>
             <button
               onClick={() => setActiveTab('proof-center')}
@@ -771,6 +857,21 @@ export default function App() {
                 Acknowledge & Close
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Two-Step Verification Auth Modal */}
+      {isAuthModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-xs animate-fadeIn">
+          <div className="w-full max-w-xl">
+            <AuthPage
+              allUsers={allUsers}
+              onLoginSuccess={handleLoginSuccess}
+              onRegisterSuccess={handleRegisterSuccess}
+              canCancel={true}
+              onCancel={() => setIsAuthModalOpen(false)}
+            />
           </div>
         </div>
       )}

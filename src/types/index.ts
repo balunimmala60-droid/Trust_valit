@@ -67,6 +67,8 @@ export interface VaultDocument {
 
 export type AuditAction =
   | 'LOGIN'
+  | 'LOGOUT'
+  | 'USER_REGISTRATION'
   | 'FAILED_LOGIN'
   | 'UPLOAD'
   | 'VIEW'

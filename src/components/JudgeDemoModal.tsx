@@ -1,9 +1,16 @@
 import React, { useState } from 'react';
 import { User } from '../types';
 import {
-  HelpCircle,
+  Sparkles,
   X,
-  ArrowRight
+  ArrowRight,
+  ShieldCheck,
+  Lock,
+  Unlock,
+  Eye,
+  Database,
+  CheckCircle,
+  FileText
 } from 'lucide-react';
 
 interface JudgeDemoModalProps {
@@ -27,21 +34,17 @@ export const JudgeDemoModal: React.FC<JudgeDemoModalProps> = ({
 
   const steps = [
     {
-      minute: 'Minute 1',
-      title: 'Platform Architecture & Owner Context',
-      description: 'Explain TrustVault: Zero-Trust Document Sharing with a Cryptographic Audit Trail. Begin logged in as Sarah Chen (Owner). Explore the real-time access radar and live system metrics.',
-      actionLabel: 'Switch to Sarah Chen (Owner) & Open Dashboard',
-      action: () => {
-        onSwitchUser(owner);
-        onSelectTab('dashboard');
-        onClose();
-      }
-    },
-    {
-      minute: 'Minute 2',
-      title: 'Document Integrity & Granular Delegation',
-      description: 'Navigate to Document Library. Open the Security Passport for "Series B Financial Cap Table". Observe the SHA-256 checksum and isolated storage UUID. Grant READ permission to David Ross (Viewer) with optional expiration.',
-      actionLabel: 'Open Documents as Sarah (Owner)',
+      stepNumber: 1,
+      badge: 'Step 1 • Owner Control',
+      title: 'Upload Confidential Documents as Owner',
+      icon: <FileText className="w-5 h-5 text-cyan-400" />,
+      simpleExplanation: 'As an Owner (Sarah Chen), you have complete management authority over confidential assets. When you upload a document, TrustVault encrypts it with AES-256 and generates a cryptographic SHA-256 integrity hash so it can never be tampered with in storage.',
+      keyPoints: [
+        'Isolated private storage UUID for every uploaded file',
+        'Cryptographic SHA-256 checksum computed on raw byte contents',
+        'Zero-trust perimeter: files are completely private by default'
+      ],
+      actionLabel: 'Try Step 1: Switch to Sarah (Owner) & Open Documents',
       action: () => {
         onSwitchUser(owner);
         onSelectTab('documents');
@@ -49,10 +52,35 @@ export const JudgeDemoModal: React.FC<JudgeDemoModalProps> = ({
       }
     },
     {
-      minute: 'Minute 3',
-      title: 'Viewer Access & IDOR Defense Demonstration',
-      description: 'Switch persona to David Ross (Viewer). Demonstrate that David can securely preview and download the authorized Cap Table. Then observe that unshared documents are strictly denied (HTTP 403 Forbidden).',
-      actionLabel: 'Switch to David Ross (Viewer)',
+      stepNumber: 2,
+      badge: 'Step 2 • Controlled Sharing',
+      title: 'Grant Explicit READ or EDIT Permissions',
+      icon: <Lock className="w-5 h-5 text-emerald-400" />,
+      simpleExplanation: 'Nobody has access unless the Owner explicitly grants it. You choose whether the recipient can only view/download (READ) or collaborate (EDIT), and you can set an automatic expiration timer (1 hour, 24 hours, or 7 days).',
+      keyPoints: [
+        'Granular READ vs. EDIT permission delegation',
+        'Automatic expiration timers prevent stale or lingering access',
+        'Every grant is recorded as an immutable block in the SHA-256 audit ledger'
+      ],
+      actionLabel: 'Try Step 2: Open Documents & Inspect Cap Table Passport',
+      action: () => {
+        onSwitchUser(owner);
+        onSelectTab('documents');
+        onClose();
+      }
+    },
+    {
+      stepNumber: 3,
+      badge: 'Step 3 • Viewer Least Privilege',
+      title: 'Experience Zero-Trust as a Viewer',
+      icon: <Eye className="w-5 h-5 text-blue-400" />,
+      simpleExplanation: 'Switch to David Ross (Viewer). David can preview and download documents explicitly shared with him. Any attempt to touch an unshared document triggers an immediate HTTP 403 Forbidden denial.',
+      keyPoints: [
+        'Direct URL IDOR attempts are strictly blocked at the Centralized Engine',
+        'Viewers cannot grant permissions, revoke access, or alter ownership',
+        'Watermarked enclave preview protects confidential content'
+      ],
+      actionLabel: 'Try Step 3: Switch to David (Viewer) & Test Shared Access',
       action: () => {
         onSwitchUser(viewerDavid);
         onSelectTab('documents');
@@ -60,10 +88,17 @@ export const JudgeDemoModal: React.FC<JudgeDemoModalProps> = ({
       }
     },
     {
-      minute: 'Minute 4',
-      title: 'Immediate Server Revocation (0ms Window)',
-      description: 'Switch back to Sarah Chen (Owner) and revoke David\'s access. Switch immediately back to David and attempt download: observe instant 403 denial with zero cached grace period! Inspect the audit log showing the revocation event.',
-      actionLabel: 'Switch to Sarah to Revoke / David to Verify',
+      stepNumber: 4,
+      badge: 'Step 4 • Instant Revoke',
+      title: 'Immediate 0ms Revocation Cutoff',
+      icon: <Unlock className="w-3.5 h-3.5 text-cyan-300" />,
+      simpleExplanation: 'Need to cut off access immediately? The owner clicks Revoke on the document card. Access terminates instantly across the entire platform with zero cached grace period!',
+      keyPoints: [
+        'Immediate 0ms server-side revocation enforcement',
+        'Subsequent download attempts fail instantly with a 403 Forbidden block',
+        'Revocation event is cryptographically linked to the SHA-256 audit ledger'
+      ],
+      actionLabel: 'Try Step 4: Switch to Sarah (Owner) to Test 1-Click Revoke',
       action: () => {
         onSwitchUser(owner);
         onSelectTab('documents');
@@ -71,10 +106,17 @@ export const JudgeDemoModal: React.FC<JudgeDemoModalProps> = ({
       }
     },
     {
-      minute: 'Minute 5',
-      title: 'Cryptographic Audit Proof & Attack Replay Lab',
-      description: 'Open the Audit Chain view: click "Verify Hash Chain Integrity" to validate every SHA-256 link. Click "Simulate Tampering" to watch the engine immediately catch an altered byte! Finally, open the Attack Replay Lab to run live IDOR and privilege escalation attacks.',
-      actionLabel: 'Open Security Proof Center & Attack Lab',
+      stepNumber: 5,
+      badge: 'Step 5 • Cryptographic Proofs',
+      title: 'Verifiable Audit Chain & Security Proofs',
+      icon: <Database className="w-5 h-5 text-cyan-400" />,
+      simpleExplanation: 'Every view, download, grant, revocation, and denial is linked by SHA-256 block hashes (H_n = SHA-256(H_n-1 || payload)). If anyone attempts to tamper with a single byte, TrustVault catches it instantly!',
+      keyPoints: [
+        'Verify SHA-256 Merkle chain integrity in 1 click',
+        'Simulate payload tampering to watch cryptographic detection in action',
+        'Mandatory Two-Step Verification (2FA) protects all account sessions'
+      ],
+      actionLabel: 'Try Step 5: Open Security Proof Center & Audit Chain',
       action: () => {
         onSwitchUser(admin);
         onSelectTab('proof-center');
@@ -83,24 +125,26 @@ export const JudgeDemoModal: React.FC<JudgeDemoModalProps> = ({
     }
   ];
 
+  const currentStepData = steps[currentStep - 1];
+
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-xs animate-fadeIn">
-      <div className="bg-[#132238] border border-[#334155] rounded-2xl w-full max-w-2xl overflow-hidden shadow-2xl flex flex-col max-h-[90vh]">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-xs animate-fadeIn">
+      <div className="bg-[#132238] border border-[#334155] rounded-3xl w-full max-w-2xl overflow-hidden shadow-2xl flex flex-col max-h-[92vh] text-slate-100">
         {/* Header */}
         <div className="p-5 border-b border-[#334155] flex items-center justify-between bg-[#0D1B2A]">
           <div className="flex items-center space-x-3">
-            <div className="w-10 h-10 rounded-lg bg-blue-600 text-white flex items-center justify-center shadow-sm">
-              <HelpCircle className="w-5 h-5 text-white" />
+            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600 text-white flex items-center justify-center shadow-lg shadow-blue-500/30 border border-blue-400/40">
+              <Sparkles className="w-5 h-5 text-cyan-300" />
             </div>
             <div>
               <div className="flex items-center space-x-2">
                 <span className="text-[10px] uppercase font-bold text-cyan-400 tracking-wider">
-                  Enterprise Architecture Tour
+                  Interactive Demo
                 </span>
                 <span className="text-[10px] text-slate-400 font-mono">Zero-Trust Guided Walkthrough</span>
               </div>
               <h2 className="text-base font-black text-white tracking-tight">
-                TrustVault Architecture & Security Tour
+                TrustVault Interactive Demo
               </h2>
             </div>
           </div>
@@ -110,56 +154,70 @@ export const JudgeDemoModal: React.FC<JudgeDemoModalProps> = ({
           </button>
         </div>
 
-        {/* Step Navigation */}
-        <div className="flex items-center justify-between px-6 pt-4 border-b border-[#334155] bg-[#0D1B2A]/70 text-xs">
-          {steps.map((s, idx) => (
+        {/* Step Tabs Navigation */}
+        <div className="flex items-center justify-between px-6 pt-3.5 border-b border-[#334155] bg-[#0D1B2A]/70 text-xs overflow-x-auto">
+          {steps.map(s => (
             <button
-              key={idx}
-              onClick={() => setCurrentStep(idx + 1)}
-              className={`pb-3 font-bold transition-all border-b-2 flex items-center space-x-1 ${
-                currentStep === idx + 1
+              key={s.stepNumber}
+              onClick={() => setCurrentStep(s.stepNumber)}
+              className={`pb-3 font-bold transition-all border-b-2 flex items-center space-x-1.5 whitespace-nowrap px-2 ${
+                currentStep === s.stepNumber
                   ? 'border-cyan-400 text-cyan-300'
                   : 'border-transparent text-slate-400 hover:text-slate-200'
               }`}
             >
-              <span>{s.minute}</span>
+              <span className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-mono ${
+                currentStep === s.stepNumber ? 'bg-blue-600 text-white' : 'bg-[#1B2D45] text-slate-400'
+              }`}>
+                {s.stepNumber}
+              </span>
+              <span>Step {s.stepNumber}</span>
             </button>
           ))}
         </div>
 
         {/* Current Step Content */}
         <div className="p-6 overflow-y-auto space-y-5 text-xs flex-1 bg-[#132238] text-slate-200">
-          {(() => {
-            const step = steps[currentStep - 1];
-            return (
-              <div className="space-y-4">
-                <div className="flex items-center space-x-2">
-                  <span className="px-2.5 py-1 rounded bg-blue-600 text-white font-bold font-mono text-[10px]">
-                    {step.minute}
-                  </span>
-                  <h3 className="text-base font-black text-white">{step.title}</h3>
-                </div>
+          <div className="space-y-4">
+            <div className="flex items-center space-x-2.5">
+              <span className="px-2.5 py-1 rounded-lg bg-blue-600/30 border border-cyan-400 text-cyan-300 font-bold font-mono text-[10px]">
+                {currentStepData.badge}
+              </span>
+              <h3 className="text-base font-black text-white">{currentStepData.title}</h3>
+            </div>
 
-                <div className="p-4 rounded-xl bg-[#0D1B2A] border border-[#334155] text-slate-300 leading-relaxed text-xs">
-                  {step.description}
-                </div>
+            {/* Plain English Explanation */}
+            <div className="p-4 rounded-2xl bg-[#0D1B2A] border border-[#334155] text-slate-200 leading-relaxed text-xs">
+              <p className="text-sm font-medium text-white mb-1">How it works:</p>
+              {currentStepData.simpleExplanation}
+            </div>
 
-                <div className="p-4 rounded-xl bg-[#1B2D45] border border-[#334155] space-y-2">
-                  <span className="text-[10px] font-bold text-cyan-400 uppercase tracking-wider block">
-                    Recommended Platform Interaction:
-                  </span>
+            {/* Key Takeaways */}
+            <div className="p-4 rounded-2xl bg-[#1B2D45] border border-[#334155] space-y-2">
+              <span className="text-[10px] font-bold text-cyan-400 uppercase tracking-wider block">
+                Security Capabilities Highlight:
+              </span>
+              <ul className="space-y-1.5">
+                {currentStepData.keyPoints.map((pt, i) => (
+                  <li key={i} className="flex items-start space-x-2 text-slate-300 text-xs">
+                    <CheckCircle className="w-3.5 h-3.5 text-cyan-400 shrink-0 mt-0.5" />
+                    <span>{pt}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
 
-                  <button
-                    onClick={step.action}
-                    className="w-full py-2.5 px-4 rounded-lg bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs shadow-md transition-all flex items-center justify-center space-x-2"
-                  >
-                    <span>{step.actionLabel}</span>
-                    <ArrowRight className="w-4 h-4" />
-                  </button>
-                </div>
-              </div>
-            );
-          })()}
+            {/* Action Button */}
+            <div className="pt-2">
+              <button
+                onClick={currentStepData.action}
+                className="w-full py-3 px-4 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-bold text-xs shadow-lg shadow-blue-600/30 transition-all flex items-center justify-center space-x-2"
+              >
+                <span>{currentStepData.actionLabel}</span>
+                <ArrowRight className="w-4 h-4" />
+              </button>
+            </div>
+          </div>
         </div>
 
         {/* Footer Navigation */}
@@ -167,9 +225,9 @@ export const JudgeDemoModal: React.FC<JudgeDemoModalProps> = ({
           <button
             onClick={() => setCurrentStep(prev => Math.max(1, prev - 1))}
             disabled={currentStep === 1}
-            className="px-3 py-1.5 rounded-lg text-slate-400 hover:text-white disabled:opacity-30 font-semibold transition-colors"
+            className="px-3.5 py-1.5 rounded-lg text-slate-400 hover:text-white disabled:opacity-30 font-semibold transition-colors"
           >
-            Previous Minute
+            ← Previous Step
           </button>
 
           <span className="text-slate-400 text-[11px] font-mono">
@@ -179,9 +237,9 @@ export const JudgeDemoModal: React.FC<JudgeDemoModalProps> = ({
           <button
             onClick={() => setCurrentStep(prev => Math.min(steps.length, prev + 1))}
             disabled={currentStep === steps.length}
-            className="px-3 py-1.5 rounded-lg text-cyan-400 hover:text-cyan-300 disabled:opacity-30 font-bold transition-colors"
+            className="px-3.5 py-1.5 rounded-lg text-cyan-400 hover:text-cyan-300 disabled:opacity-30 font-bold transition-colors"
           >
-            Next Minute
+            Next Step →
           </button>
         </div>
       </div>

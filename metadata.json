@@ -1,6 +1,6 @@
 {
   "name": "TrustVault",
-  "description": "Secure document sharing platform with centralized zero-trust authorization, cryptographic SHA-256 audit hash chain, immediate revocation, and threat verification.",
+  "description": "TrustVault enables organizations to securely store, manage and share confidential documents through document-level permissions, controlled access, immediate revocation and verifiable audit trails. Your Documents. Your Control. Your Security.",
   "requestFramePermissions": [],
   "majorCapabilities": [
     "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"

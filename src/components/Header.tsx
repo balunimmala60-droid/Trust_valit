@@ -12,7 +12,8 @@ import {
   Sun,
   Moon,
   Sparkles,
-  Palette
+  Palette,
+  LogOut
 } from 'lucide-react';
 import { useTheme } from '../context/ThemeContext';
 
@@ -25,6 +26,8 @@ interface HeaderProps {
   notifications: NotificationItem[];
   onOpenDemoGuide: () => void;
   chainValid: boolean;
+  onSignOut?: () => void;
+  onOpenAuth?: () => void;
 }
 
 export const Header: React.FC<HeaderProps> = ({
@@ -35,7 +38,9 @@ export const Header: React.FC<HeaderProps> = ({
   onSelectTab,
   notifications,
   onOpenDemoGuide,
-  chainValid
+  chainValid,
+  onSignOut,
+  onOpenAuth
 }) => {
   const [showPersonaMenu, setShowPersonaMenu] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
@@ -101,14 +106,14 @@ export const Header: React.FC<HeaderProps> = ({
           {/* Right Action Tools: Judge Demo, Audit Status, Persona Switcher */}
           <div className="flex items-center space-x-2.5">
 
-            {/* Enterprise Platform Tour & System Guide */}
+            {/* Enterprise Interactive Demo */}
             <button
               onClick={onOpenDemoGuide}
               className="flex items-center space-x-1.5 px-3 py-1.5 rounded-md text-xs font-bold transition-all shadow-sm bg-blue-600/30 hover:bg-blue-600/50 text-blue-200 border border-blue-500/50"
-              title="Platform Overview & Architecture Walkthrough"
+              title="Interactive Demo • Zero-Trust Guided Walkthrough"
             >
-              <HelpCircle className="w-3.5 h-3.5" />
-              <span className="hidden sm:inline">Platform Tour</span>
+              <Sparkles className="w-3.5 h-3.5 text-cyan-300" />
+              <span>Demo</span>
             </button>
 
 
@@ -211,9 +216,47 @@ export const Header: React.FC<HeaderProps> = ({
                       </button>
                     ))}
                   </div>
+
+                  <div className="mt-2 pt-2 border-t border-[#334155] space-y-1">
+                    {onOpenAuth && (
+                      <button
+                        onClick={() => {
+                          setShowPersonaMenu(false);
+                          onOpenAuth();
+                        }}
+                        className="w-full text-left p-2 rounded-lg text-xs font-semibold text-cyan-300 hover:text-white hover:bg-[#1B2D45] flex items-center space-x-2 transition-all"
+                      >
+                        <Shield className="w-3.5 h-3.5 text-cyan-400" />
+                        <span>Sign In / Create Account (2FA)</span>
+                      </button>
+                    )}
+                    {onSignOut && (
+                      <button
+                        onClick={() => {
+                          setShowPersonaMenu(false);
+                          onSignOut();
+                        }}
+                        className="w-full text-left p-2 rounded-lg text-xs font-semibold text-rose-300 hover:text-rose-200 hover:bg-rose-950/40 flex items-center space-x-2 transition-all"
+                      >
+                        <LogOut className="w-3.5 h-3.5 text-rose-400" />
+                        <span>Sign Out of Vault</span>
+                      </button>
+                    )}
+                  </div>
                 </div>
               )}
             </div>
+
+            {/* Quick Sign Out Action */}
+            {onSignOut && (
+              <button
+                onClick={onSignOut}
+                className="hidden sm:flex items-center space-x-1 p-2 rounded-md border text-xs font-medium transition-all bg-[#1B2D45] hover:bg-rose-950/40 hover:text-rose-300 hover:border-rose-500/50 border-[#334155] text-slate-300"
+                title="Sign Out of Session"
+              >
+                <LogOut className="w-3.5 h-3.5" />
+              </button>
+            )}
           </div>
         </div>
       </div>
