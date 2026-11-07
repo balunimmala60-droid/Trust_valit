@@ -82,7 +82,7 @@ export const Header: React.FC<HeaderProps> = ({
               { id: 'documents', label: 'Documents' },
               { id: 'record-history', label: 'Record History' },
               { id: 'proof-center', label: 'Security Proofs' },
-              { id: 'attack-lab', label: 'Attack Replay Lab' },
+              { id: 'attack-lab', label: 'Attack Defense Lab' },
               { id: 'audit-trail', label: 'Audit Chain' },
               { id: 'copilot', label: 'AI Copilot' },
               { id: 'requests', label: 'Access Requests' },

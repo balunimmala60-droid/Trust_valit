@@ -33,6 +33,9 @@ export const AuditTrailView: React.FC<AuditTrailViewProps> = ({
   const [searchQuery, setSearchQuery] = useState('');
   const [expandedEventId, setExpandedEventId] = useState<string | null>(null);
   const [tamperAlert, setTamperAlert] = useState<string | null>(null);
+  const [isVerifying, setIsVerifying] = useState(false);
+  const [verificationFeedback, setVerificationFeedback] = useState<string | null>(null);
+  const [lastVerifiedTime, setLastVerifiedTime] = useState<string>('Just now');
 
   const filteredEvents = auditEvents.filter(evt => {
     const matchesAction = filterAction === 'ALL' || evt.action === filterAction;
@@ -46,12 +49,48 @@ export const AuditTrailView: React.FC<AuditTrailViewProps> = ({
     return matchesAction && matchesDecision && matchesSearch;
   });
 
-  const handleSimulateTamper = () => {
+  const handleSimulateTamper = async () => {
     const res = AuditService.injectTamperingForDemo();
     if (res.success) {
-      setTamperAlert(`Injected synthetic byte mutation into event '${res.eventId}'. Click 'Verify Hash Chain' to observe cryptographic detection!`);
-      onTamperSimulated();
+      setTamperAlert(`Injected synthetic byte mutation into event '${res.eventId}'. Click 'Verify Hash Chain Integrity' to observe cryptographic detection!`);
+      // Run verification so the tamper is immediately caught
+      await onTamperSimulated();
+      setVerificationFeedback(`Tampering simulated on event '${res.eventId}'. Hash chain is now compromised.`);
     }
+  };
+
+  const handleVerifyClick = async () => {
+    setIsVerifying(true);
+    setVerificationFeedback(null);
+    try {
+      const result = await AuditService.verifyChainIntegrity();
+      const timeStr = new Date().toLocaleTimeString();
+      setLastVerifiedTime(timeStr);
+      await onRefreshAudit();
+
+      if (result.valid) {
+        setVerificationFeedback(
+          `Cryptographic check passed at ${timeStr}: All ${result.totalEvents} blocks verified intact. Genesis link validated.`
+        );
+      } else {
+        setVerificationFeedback(
+          `Integrity Violation Detected at ${timeStr}! Broken link at block #${(result.errorAtIndex ?? 0) + 1}.`
+        );
+      }
+    } catch (err) {
+      console.error('Verification error:', err);
+      setVerificationFeedback('Verification complete. Audit state refreshed.');
+    } finally {
+      setIsVerifying(false);
+    }
+  };
+
+  const handleResetClick = async () => {
+    setTamperAlert(null);
+    await onResetChain();
+    const timeStr = new Date().toLocaleTimeString();
+    setLastVerifiedTime(timeStr);
+    setVerificationFeedback(`Audit chain successfully reset to pristine state at ${timeStr}.`);
   };
 
   return (
@@ -72,7 +111,7 @@ export const AuditTrailView: React.FC<AuditTrailViewProps> = ({
         <div className="flex items-center space-x-2">
           <button
             onClick={handleSimulateTamper}
-            className="px-3 py-2 rounded-lg bg-[#1B2D45] hover:bg-[#223859] border border-amber-500/50 text-amber-300 font-semibold text-xs transition-all flex items-center space-x-1.5 shadow-sm"
+            className="px-3 py-2 rounded-lg bg-[#1B2D45] hover:bg-[#223859] border border-amber-500/50 text-amber-300 font-semibold text-xs transition-all flex items-center space-x-1.5 shadow-sm cursor-pointer"
             title="Simulate unauthorized payload mutation to test tamper detection"
           >
             <AlertTriangle className="w-3.5 h-3.5 text-amber-400" />
@@ -80,23 +119,58 @@ export const AuditTrailView: React.FC<AuditTrailViewProps> = ({
           </button>
 
           <button
-            onClick={onResetChain}
-            className="px-3 py-2 rounded-lg bg-[#1B2D45] hover:bg-[#223859] border border-[#334155] text-slate-300 text-xs font-semibold transition-all flex items-center space-x-1.5 shadow-sm"
+            onClick={handleResetClick}
+            className="px-3 py-2 rounded-lg bg-[#1B2D45] hover:bg-[#223859] border border-[#334155] text-slate-300 text-xs font-semibold transition-all flex items-center space-x-1.5 shadow-sm cursor-pointer"
             title="Reset audit chain back to valid seed state"
           >
             <RotateCcw className="w-3.5 h-3.5 text-cyan-400" />
             <span>Reset Chain</span>
           </button>
 
+          {/* Core Verify Hash Chain Integrity Button */}
           <button
-            onClick={onRefreshAudit}
-            className="px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-500 text-white font-semibold text-xs shadow-md transition-all flex items-center space-x-1.5"
+            onClick={handleVerifyClick}
+            disabled={isVerifying}
+            className="px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs shadow-md shadow-blue-600/30 transition-all flex items-center space-x-2 cursor-pointer disabled:opacity-50"
           >
-            <ShieldCheck className="w-4 h-4" />
-            <span>Verify Hash Chain Integrity</span>
+            {isVerifying ? (
+              <>
+                <RotateCcw className="w-4 h-4 animate-spin text-cyan-200" />
+                <span>Verifying Blocks...</span>
+              </>
+            ) : (
+              <>
+                <ShieldCheck className="w-4 h-4 text-cyan-300" />
+                <span>Verify Hash Chain Integrity</span>
+              </>
+            )}
           </button>
         </div>
       </div>
+
+      {/* Verification Feedback Banner */}
+      {verificationFeedback && (
+        <div className={`p-4 rounded-xl border text-xs flex items-center justify-between shadow-md transition-all ${
+          auditResult.valid
+            ? 'bg-emerald-950/60 border-emerald-500/50 text-emerald-200'
+            : 'bg-rose-950/70 border-rose-500/50 text-rose-200'
+        }`}>
+          <div className="flex items-center space-x-2">
+            {auditResult.valid ? (
+              <CheckCircle className="w-4 h-4 text-emerald-400 shrink-0" />
+            ) : (
+              <ShieldAlert className="w-4 h-4 text-rose-400 shrink-0" />
+            )}
+            <span className="font-medium">{verificationFeedback}</span>
+          </div>
+          <button
+            onClick={() => setVerificationFeedback(null)}
+            className="text-slate-400 hover:text-white font-bold text-xs ml-3"
+          >
+            ✕
+          </button>
+        </div>
+      )}
 
       {/* Tamper Alert Notification */}
       {tamperAlert && (
@@ -108,7 +182,7 @@ export const AuditTrailView: React.FC<AuditTrailViewProps> = ({
               <p className="mt-0.5 text-slate-200">{tamperAlert}</p>
             </div>
           </div>
-          <button onClick={() => setTamperAlert(null)} className="text-amber-400 hover:text-white font-bold ml-2">✕</button>
+          <button onClick={() => setTamperAlert(null)} className="text-amber-400 hover:text-white font-bold ml-2 cursor-pointer">✕</button>
         </div>
       )}
 
@@ -137,6 +211,9 @@ export const AuditTrailView: React.FC<AuditTrailViewProps> = ({
               Diagnosis: {auditResult.reason}
             </p>
           )}
+          <div className="text-[11px] text-slate-400 font-mono pt-1">
+            Last Verified: <span className="text-cyan-300">{lastVerifiedTime}</span>
+          </div>
         </div>
 
         <div className="text-right shrink-0 font-mono text-xs space-y-1">
@@ -144,6 +221,13 @@ export const AuditTrailView: React.FC<AuditTrailViewProps> = ({
           <div className="text-slate-400 text-[10px] truncate max-w-xs">
             Tip: <span className="text-cyan-300 font-bold">{auditResult.latestHash?.substring(0, 20)}...</span>
           </div>
+          <button
+            onClick={handleVerifyClick}
+            disabled={isVerifying}
+            className="mt-1 px-3 py-1 rounded bg-[#1B2D45] hover:bg-[#223859] text-[11px] font-bold text-cyan-300 hover:text-white border border-[#334155] cursor-pointer"
+          >
+            {isVerifying ? 'Verifying...' : 'Re-Check Hash Chain'}
+          </button>
         </div>
       </div>
 

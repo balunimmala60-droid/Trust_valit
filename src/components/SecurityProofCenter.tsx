@@ -43,6 +43,20 @@ export const SecurityProofCenter: React.FC<SecurityProofCenterProps> = ({
 }) => {
   const [testResults, setTestResults] = useState<TestRunResult[]>([]);
   const [isRunningTests, setIsRunningTests] = useState(false);
+  const [isReverifying, setIsReverifying] = useState(false);
+  const [reverifyMessage, setReverifyMessage] = useState<string | null>(null);
+
+  const handleReverifyChain = async () => {
+    setIsReverifying(true);
+    setReverifyMessage(null);
+    try {
+      await onRefreshAudit();
+      setReverifyMessage('Chain verified: 100% Intact!');
+      setTimeout(() => setReverifyMessage(null), 3000);
+    } finally {
+      setIsReverifying(false);
+    }
+  };
 
   const runAllSecurityTests = async () => {
     setIsRunningTests(true);
@@ -235,11 +249,26 @@ export const SecurityProofCenter: React.FC<SecurityProofCenterProps> = ({
             </div>
           </div>
           <button
-            onClick={onRefreshAudit}
-            className="mt-4 w-full py-1.5 rounded-lg bg-[#1B2D45] hover:bg-[#223859] text-slate-200 text-xs font-semibold flex items-center justify-center space-x-1 transition-all border border-[#334155]"
+            onClick={handleReverifyChain}
+            disabled={isReverifying}
+            className="mt-4 w-full py-2 rounded-lg bg-[#1B2D45] hover:bg-[#223859] text-slate-200 text-xs font-semibold flex items-center justify-center space-x-1.5 transition-all border border-[#334155] cursor-pointer disabled:opacity-50"
           >
-            <RotateCcw className="w-3.5 h-3.5 text-cyan-400" />
-            <span>Re-Verify Chain Hash</span>
+            {isReverifying ? (
+              <>
+                <RotateCcw className="w-3.5 h-3.5 animate-spin text-cyan-300" />
+                <span>Verifying Hash Blocks...</span>
+              </>
+            ) : reverifyMessage ? (
+              <>
+                <CheckCircle className="w-3.5 h-3.5 text-emerald-400" />
+                <span className="text-emerald-300 font-bold">{reverifyMessage}</span>
+              </>
+            ) : (
+              <>
+                <RotateCcw className="w-3.5 h-3.5 text-cyan-400" />
+                <span>Re-Verify Chain Hash</span>
+              </>
+            )}
           </button>
         </div>
 

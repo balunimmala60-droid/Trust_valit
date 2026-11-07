@@ -62,10 +62,8 @@ export default function App() {
   const [isUploadOpen, setIsUploadOpen] = useState(false);
   const [isDemoGuideOpen, setIsDemoGuideOpen] = useState(false);
   const [accessDeniedAlert, setAccessDeniedAlert] = useState<{ title: string; reason: string } | null>(null);
-  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(() => {
-    const saved = localStorage.getItem('trustvault_authenticated');
-    return saved !== null ? saved === 'true' : true;
-  });
+  // Always show login page first on application open as requested
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
 
   // Initialize DB and Audit Chain on mount

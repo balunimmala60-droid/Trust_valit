@@ -10,7 +10,12 @@ export const ATTACK_SCENARIOS: AttackSimulation[] = [
     description: 'An attacker attempts to access a competitor confidential document by guessing or enumerating UUIDs directly in the API request.',
     attackVector: 'GET /api/v1/documents/doc_vault_001 (by unshared user elena.viewer@contractor.io)',
     simulatedPayload: 'Authorization: Bearer <elena_jwt>\nTarget Resource: doc_vault_001 (Series B Cap Table)\nOwner: sarah.owner@acmecorp.com',
-    expectedResult: 'DENIED (403)'
+    expectedResult: 'DENIED (403)',
+    simpleGoal: 'An unauthorized user tries to open a confidential document simply by changing the document ID in the URL.',
+    simpleDefense: 'TrustVault verifies permissions on the central server before returning anything. Even if an attacker guesses the right ID, they are blocked with HTTP 403 Forbidden.',
+    attackerPersona: 'Elena (External Contractor without permissions)',
+    targetAsset: 'Series B Cap Table ($45M Valuation)',
+    severity: 'CRITICAL'
   },
   {
     threatId: 'TV-THR-02',
@@ -19,7 +24,12 @@ export const ATTACK_SCENARIOS: AttackSimulation[] = [
     description: 'An unauthenticated or unauthorized party attempts to bypass UI controls to stream the raw document file directly.',
     attackVector: 'GET /api/v1/documents/doc_vault_002/download',
     simulatedPayload: 'GET /api/v1/documents/doc_vault_002/download HTTP/1.1\nHost: api.trustvault.sec\nUser-Agent: curl/8.4.0',
-    expectedResult: 'DENIED (403)'
+    expectedResult: 'DENIED (403)',
+    simpleGoal: 'A hacker or bot uses command-line tools (curl) to stream binary files directly, attempting to bypass website buttons.',
+    simpleDefense: 'Documents are stored in isolated private containers with randomized IDs, not public web URLs. Every download requires a valid active grant.',
+    attackerPersona: 'Anonymous Web Bot / Hacker Script',
+    targetAsset: 'Private Financial Ledgers & Customer Records',
+    severity: 'CRITICAL'
   },
   {
     threatId: 'TV-THR-03',
@@ -28,7 +38,12 @@ export const ATTACK_SCENARIOS: AttackSimulation[] = [
     description: 'A contractor whose access was revoked by the document owner attempts to download the file using an existing session.',
     attackVector: 'GET /api/v1/documents/doc_vault_003/download (Elena - access revoked)',
     simulatedPayload: 'Target: doc_vault_003 (PenTest Report)\nUser: elena.viewer@contractor.io\nStored Permission Status: REVOKED',
-    expectedResult: 'DENIED (403)'
+    expectedResult: 'DENIED (403)',
+    simpleGoal: 'A contractor whose access was revoked by the owner tries to download the file using an old open tab or saved link.',
+    simpleDefense: 'Revocation is enforced in real-time with 0ms grace period. The instant access is revoked, all subsequent download attempts fail immediately.',
+    attackerPersona: 'Former Contractor with Revoked Permissions',
+    targetAsset: 'Security Penetration Test Report',
+    severity: 'HIGH'
   },
   {
     threatId: 'TV-THR-04',
@@ -37,7 +52,12 @@ export const ATTACK_SCENARIOS: AttackSimulation[] = [
     description: 'A user with VIEWER role attempts to invoke the permission grant API to award themselves or peers EDIT access.',
     attackVector: 'POST /api/v1/documents/doc_vault_001/permissions',
     simulatedPayload: '{\n  "document_id": "doc_vault_001",\n  "grantee": "david.viewer@external-partner.com",\n  "level": "EDIT"\n}',
-    expectedResult: 'DENIED (403)'
+    expectedResult: 'DENIED (403)',
+    simpleGoal: 'A viewer with read-only access tries to grant themselves or colleagues edit rights on someone else\'s document.',
+    simpleDefense: 'Only the original document owner has authority to grant or revoke delegations. The zero-trust engine immediately rejects delegation requests from viewers.',
+    attackerPersona: 'Viewer User trying to escalate permissions',
+    targetAsset: 'Core IP & Architecture Whitepapers',
+    severity: 'HIGH'
   },
   {
     threatId: 'TV-THR-05',
@@ -46,7 +66,12 @@ export const ATTACK_SCENARIOS: AttackSimulation[] = [
     description: 'A system administrator attempts to inspect confidential document content without an explicit owner grant, testing zero-trust separation.',
     attackVector: 'GET /api/v1/documents/doc_vault_001/preview (by admin@trustvault.sec)',
     simulatedPayload: 'User Role: ADMIN\nTarget: doc_vault_001 (Series B Cap Table)\nExplicit Owner Grant: NONE',
-    expectedResult: 'DENIED (403)'
+    expectedResult: 'DENIED (403)',
+    simpleGoal: 'A system administrator attempts to peek into confidential documents that the owner never shared with them.',
+    simpleDefense: 'TrustVault enforces strict zero-trust boundary separation. Admins manage accounts and infrastructure, but CANNOT read private document content without an explicit owner grant.',
+    attackerPersona: 'Curious System Administrator',
+    targetAsset: 'Confidential Executive M&A Strategy',
+    severity: 'CRITICAL'
   },
   {
     threatId: 'TV-THR-06',
@@ -55,7 +80,12 @@ export const ATTACK_SCENARIOS: AttackSimulation[] = [
     description: 'An attacker uploads a Windows PE executable disguised with a .pdf extension (exploit.pdf) to test deep inspection.',
     attackVector: 'POST /api/v1/documents/upload (Header: 4D 5A 90 00 / MZ binary header)',
     simulatedPayload: 'Filename: Q4_Invoice.pdf\nMIME-Type: application/pdf\nRaw Header: 4D 5A 90 00 03 00 00 00 (Executable PE Signature)',
-    expectedResult: 'REJECTED (400)'
+    expectedResult: 'REJECTED (400)',
+    simpleGoal: 'An attacker renames a virus executable (.exe) to "Invoice.pdf" and uploads it to compromise cloud storage.',
+    simpleDefense: 'TrustVault reads the binary header (magic bytes). Because it starts with 4D 5A (Windows Executable) instead of %PDF-, the file is instantly rejected.',
+    attackerPersona: 'Malware / Trojan Uploader',
+    targetAsset: 'Secure Enterprise Cloud Storage',
+    severity: 'CRITICAL'
   },
   {
     threatId: 'TV-THR-09',
@@ -64,7 +94,12 @@ export const ATTACK_SCENARIOS: AttackSimulation[] = [
     description: 'An unauthorized user queries search keywords ("Series B", "Cap Table") trying to infer the existence or metadata of unshared documents.',
     attackVector: 'GET /api/v1/documents/search?q=CapTable (by contractor)',
     simulatedPayload: 'Query: "CapTable"\nCaller: elena.viewer@contractor.io (No permission on doc_vault_001)',
-    expectedResult: 'ISOLATED (0 RESULTS)'
+    expectedResult: 'ISOLATED (0 RESULTS)',
+    simpleGoal: 'An unauthorized user searches for terms like "Cap Table" or "M&A" hoping to see confidential file titles or metadata.',
+    simpleDefense: 'The search index strictly filters by caller permissions. Unshared documents do not exist in the results (0 documents returned).',
+    attackerPersona: 'Unauthorized User snooping for file titles',
+    targetAsset: 'Unshared Internal Document Titles',
+    severity: 'MEDIUM'
   }
 ];
 

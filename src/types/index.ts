@@ -153,4 +153,9 @@ export interface AttackSimulation {
   details?: string;
   auditEventId?: string;
   executedAt?: string;
+  simpleGoal?: string;
+  simpleDefense?: string;
+  attackerPersona?: string;
+  targetAsset?: string;
+  severity?: 'CRITICAL' | 'HIGH' | 'MEDIUM';
 }
